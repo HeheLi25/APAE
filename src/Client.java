@@ -18,11 +18,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 import javax.swing.border.LineBorder;
+import javax.swing.SwingConstants;
 
 public class Client extends JFrame implements ActionListener{
 	private JLabel text1;
-	private JLabel text2;
-	private Client controller;
+	private JLabel text2,yourCards;
 	private JButton btnquit,draw,pass;
 	public JPanel cardPanel;
 	
@@ -43,41 +43,42 @@ public class Client extends JFrame implements ActionListener{
 	}
 	public Client() {
 		setTitle("Game Twenty-one");
-		setSize(400, 400);
+		setSize(300, 500);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setLocation(500, 300);
 		text1 = new JLabel("Username: ");
-		text1.setFont(new Font("Arial", Font.BOLD, 15));
-		text1.setBounds(21, 14, 233, 29);
+		text1.setFont(new Font("Arial", Font.BOLD, 12));
+		text1.setBounds(21, 0, 158, 23);
 		text2 = new JLabel("Connecting to the server...");
+		text2.setHorizontalAlignment(SwingConstants.CENTER);
 		text2.setFont(new Font("Arial", Font.BOLD, 15));
-		text2.setBounds(21, 49, 332, 29);
+		text2.setBounds(0, 33, 274, 29);
 		getContentPane().setLayout(null);
 		getContentPane().add(text1);
 		getContentPane().add(text2);
 		
 		cardPanel = new JPanel();
 		cardPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		cardPanel.setBounds(21, 107, 342, 178);
+		cardPanel.setBounds(20, 94, 242, 191);
 		getContentPane().add(cardPanel);
 		cardPanel.setLayout(new GridLayout(0,1));
 		
 		draw = new JButton("Draw a card");
-		draw.setBounds(53, 300, 120, 40);
+		draw.setBounds(80, 300, 120, 40);
 		draw.setEnabled(false);
 		getContentPane().add(draw);
 		pass = new JButton("Pass");
-		pass.setBounds(210, 300, 120, 40);
+		pass.setBounds(80, 345, 120, 40);
 		pass.setEnabled(false);
 		getContentPane().add(pass);
 		
 		btnquit = new JButton("Quit");
-		btnquit.setBounds(285, 10, 78, 29);
-		btnquit.addActionListener(controller);
+		btnquit.setBounds(80, 390, 120, 40);
+		btnquit.addActionListener(this);
 		getContentPane().add(btnquit);
 		
-		JLabel yourCards = new JLabel("Your cards");
-		yourCards.setBounds(21, 83, 108, 23);
+		yourCards = new JLabel("Your cards");
+		yourCards.setBounds(21, 71, 241, 23);
 		yourCards.setFont(new Font("Arial", Font.BOLD, 12));
 		getContentPane().add(yourCards);
 		
@@ -91,6 +92,7 @@ public class Client extends JFrame implements ActionListener{
 			e.printStackTrace();
 			return;
 		}
+		setVisible(true);
 		/*
 		 * When the client is connected to the server, show a dialog
 		 * The user will input their name and it will be sent to the server. 
@@ -102,7 +104,7 @@ public class Client extends JFrame implements ActionListener{
 		this.name = s;
 		text1.setText("Username: "+s);
 		setStateToWait();
-		setVisible(true);
+
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -149,8 +151,10 @@ public class Client extends JFrame implements ActionListener{
 					if (p.getType().equals("CARD")) {
 						Card thisCard = (Card) p.getObject();
 						System.out.println(thisCard.toString());
-						text2.setText("1");
-						parent.cardPanel.add(new JLabel(thisCard.toString()));
+						yourCards.setText("You drawed: "+thisCard.toString());
+						JLabel cardLabel = new JLabel(thisCard.toString());
+						cardLabel.setHorizontalAlignment(SwingConstants.CENTER);
+						parent.cardPanel.add(cardLabel);
 						
 					}
 					if (p.getType().equals("CLEAR")) {

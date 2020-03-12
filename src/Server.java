@@ -203,7 +203,7 @@ public class Server implements Runnable, ActionListener {
 				view.writeLog("The dealer is: "+ dealer.name);
 				for(ClientThread player: players) {
 					if(player == dealer) {
-						player.send(new Package("MESSAGE","You are the DEALER now!"));
+						player.send(new Package("MESSAGE","YOU are the dealer now!"));
 					}else {
 						player.send(new Package("MESSAGE","The dealer is: "+dealer.name+". "));
 					}
