@@ -1,8 +1,8 @@
 import java.io.Serializable;
 
 public class Package implements Serializable{
-	String sender;
-	String type;
+//	private String sender;
+	private String type;
 	/* MESSAGE
 	 * START
 	 * CARD
@@ -10,7 +10,20 @@ public class Package implements Serializable{
 	 * REGISTER
 	 * DRAW
 	 */
-	Object o;
+	private Serializable object;
+	
+	public Package(String t, Serializable o) {
+		type = t;
+		object = o;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public Serializable getObject() {
+		return object;
+	}
 	
 
 }
