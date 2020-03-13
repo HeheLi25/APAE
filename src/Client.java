@@ -21,7 +21,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.SwingConstants;
 
 public class Client extends JFrame implements ActionListener{
-	private JLabel text1,text2,text3,stack;
+	private JLabel text1,text2,text3,stack,dealer;
 	private JButton btnquit,draw,pass;
 	public JPanel cardPanel;
 	
@@ -50,7 +50,7 @@ public class Client extends JFrame implements ActionListener{
 	public Client() {
 		//The GUI page design.
 		setTitle("Game Twenty-one");
-		setSize(404, 322);
+		setSize(404, 300);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		text1 = new JLabel("Username: ");
 		text1.setBounds(10, 0, 226, 23);
@@ -61,22 +61,28 @@ public class Client extends JFrame implements ActionListener{
 		getContentPane().setLayout(null);
 		getContentPane().add(text1);
 		getContentPane().add(text2);
+		dealer = new JLabel("Dealer");
+		dealer.setForeground(new Color(204, 102, 0));
+		dealer.setHorizontalAlignment(SwingConstants.CENTER);
+		dealer.setBounds(257, 72, 108, 29);
+		dealer.setVisible(false);
+		getContentPane().add(dealer);
 		stack = new JLabel("Stack:"+stacks);
 		stack.setHorizontalAlignment(SwingConstants.TRAILING);
 		stack.setBounds(257, 0, 120, 23);
 		getContentPane().add(stack);
 		cardPanel = new JPanel();
 		cardPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		cardPanel.setBounds(10, 81, 242, 191);
+		cardPanel.setBounds(10, 81, 242, 170);
 		getContentPane().add(cardPanel);
 		cardPanel.setLayout(new GridLayout(0,1));	
 		draw = new JButton("Draw a card");
-		draw.setBounds(257, 94, 120, 40);
+		draw.setBounds(257, 111, 120, 40);
 		draw.addActionListener(this);
 		draw.setEnabled(false);
 		getContentPane().add(draw);
 		pass = new JButton("Pass");
-		pass.setBounds(257, 143, 120, 40);
+		pass.setBounds(257, 161, 120, 40);
 		pass.setEnabled(false);
 		pass.addActionListener(this);
 		getContentPane().add(pass);	
@@ -108,6 +114,7 @@ public class Client extends JFrame implements ActionListener{
 			s = JOptionPane.showInputDialog("Please input your name:");
 		send(new Package("REGISTER", s));
 		text1.setText("Username: "+s);
+	
 		name = s;
 		setStateToWait();
 	}
@@ -168,6 +175,10 @@ public class Client extends JFrame implements ActionListener{
 				while ((p = (Package) in.readObject()) != null) {
 					btnquit.setEnabled(false);
 					System.out.println(name + " get package: " + p.getType());
+					if (p.getType().equals("DEALER")) {
+						if((boolean)p.getObject()) dealer.setVisible(true);
+						else dealer.setVisible(false);
+					}
 					/*
 					 * 
 					 */

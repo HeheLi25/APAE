@@ -225,6 +225,10 @@ public class Server implements Runnable, ActionListener {
 			}
 		if(NVU.size() == 1) {	//One player wins with natural vingt-un (21).
 			ClientThread winner = NVU.get(0);
+			view.writeLog("Dealer changed from " + dealer.name + " to " + winner.name);
+			dealer.send(new Package("DEALER",false)); 
+			dealer = winner; 
+			dealer.send(new Package("DEALER",true));
 			view.writeLog("----"+winner.name + " wins with natural 21!----");
 			for(ClientThread player: players) {	//Send all losing players the message and change their stacks.  
 				player.send(new Package("MESSAGE",winner.name+" has natural 21! You lose 2 stacks."));
@@ -235,7 +239,9 @@ public class Server implements Runnable, ActionListener {
 					winner.send(new Package("END",winStacks));
 				}
 			}
-			dealer = winner; //Change the dealer to the winner
+			//Change the dealer to the winner
+
+			
 			return true;
 		}else if(NVU.size() > 1) {
 			view.writeLog("----More than one natural 21. No winners.----");
@@ -298,6 +304,7 @@ public class Server implements Runnable, ActionListener {
 	}
 	
 	public void dealerTurn() {
+		view.writeLog("All players pass, dealer's turn.");
 		dealer.send(new Package("MESSAGE","Now is your turn."));
 		dealer.send(new Package("ASK",null));
 	}
@@ -369,6 +376,7 @@ public class Server implements Runnable, ActionListener {
 						if(thisCard.getNum().equals("A")) {
 							dealerChosen = true;
 							dealer = player;
+							player.send(new Package("DEALER",true)); //Send a dealer package to inform the dealer.
 							break;
 						}
 					}
@@ -406,11 +414,8 @@ public class Server implements Runnable, ActionListener {
 			}
 			askToAll();
 			return null;
-		}
-
-		
+		}		
 	}
-
 	public static void main(String[] args) {
 		Thread t = new Thread(new Server());
 		t.start();
@@ -419,8 +424,5 @@ public class Server implements Runnable, ActionListener {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
 	}
-
-
 }
