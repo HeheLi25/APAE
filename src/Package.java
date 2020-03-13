@@ -6,11 +6,12 @@ public class Package implements Serializable{
 	/* MESSAGE
 	 * START
 	 * CARD
-	 * COUNT
+	 * ASK
 	 * END
 	 * 
 	 * REGISTER
 	 * DRAW
+	 * PASS
 	 */
 	private Serializable object;
 	

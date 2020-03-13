@@ -52,7 +52,9 @@ public class CardDeck {
 		Collections.shuffle(deck);
 	}
 	public Card draw() {
-		return deck.remove(0);
+		synchronized(this) {
+			return deck.remove(0);
+		}
 	}
 	public static void main(String[] args) {
 		CardDeck cd = new CardDeck();
