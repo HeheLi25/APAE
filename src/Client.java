@@ -50,42 +50,42 @@ public class Client extends JFrame implements ActionListener{
 	public Client() {
 		//The GUI page design.
 		setTitle("Game Twenty-one");
-		setSize(440, 360);
+		setSize(404, 322);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		text1 = new JLabel("Username: ");
-		text1.setBounds(21, 0, 226, 23);
+		text1.setBounds(10, 0, 226, 23);
 		text2 = new JLabel("Connecting to the server...");
 		text2.setHorizontalAlignment(SwingConstants.CENTER);
 		text2.setFont(new Font("Arial", Font.BOLD, 13));
-		text2.setBounds(0, 33, 403, 29);
+		text2.setBounds(0, 31, 384, 29);
 		getContentPane().setLayout(null);
 		getContentPane().add(text1);
 		getContentPane().add(text2);
 		stack = new JLabel("Stack:"+stacks);
 		stack.setHorizontalAlignment(SwingConstants.TRAILING);
-		stack.setBounds(266, 0, 137, 23);
+		stack.setBounds(257, 0, 120, 23);
 		getContentPane().add(stack);
 		cardPanel = new JPanel();
 		cardPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-		cardPanel.setBounds(20, 94, 242, 191);
+		cardPanel.setBounds(10, 81, 242, 191);
 		getContentPane().add(cardPanel);
 		cardPanel.setLayout(new GridLayout(0,1));	
 		draw = new JButton("Draw a card");
-		draw.setBounds(283, 123, 120, 40);
+		draw.setBounds(257, 94, 120, 40);
 		draw.addActionListener(this);
 		draw.setEnabled(false);
 		getContentPane().add(draw);
 		pass = new JButton("Pass");
-		pass.setBounds(283, 184, 120, 40);
+		pass.setBounds(257, 143, 120, 40);
 		pass.setEnabled(false);
 		pass.addActionListener(this);
 		getContentPane().add(pass);	
 		btnquit = new JButton("Quit");
-		btnquit.setBounds(283, 245, 120, 40);
+		btnquit.setBounds(257, 211, 120, 40);
 		btnquit.addActionListener(this);
 		getContentPane().add(btnquit);	
 		text3 = new JLabel("Welcome.");
-		text3.setBounds(21, 71, 168, 23);
+		text3.setBounds(10, 60, 168, 23);
 		getContentPane().add(text3);
 		setVisible(true);
 		//Connect the server.
@@ -118,6 +118,7 @@ public class Client extends JFrame implements ActionListener{
 		text3.setText("Waiting for a new game...");
 		send(new Package("OUT", points));
 		passYourTurn();
+		btnquit.setEnabled(true);
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -125,8 +126,8 @@ public class Client extends JFrame implements ActionListener{
 			try {
 				send(new Package("QUIT",null));
 			}catch(Exception exc) {}
-			quit = true;
-			System.exit(0);
+		//	quit = true;
+		//	System.exit(0);
 		}
 		if(e.getSource() == draw) {
 			send(new Package("DRAW",null));
@@ -142,10 +143,10 @@ public class Client extends JFrame implements ActionListener{
 
 	
 	private void send(Package p) {
+		System.out.println(name + " send package: " + p.getType());
 		try {
 			out.writeObject(p);
 		} catch (IOException e) {e.printStackTrace();}
-		System.out.println(name+": "+p.getType()+" sent.");
 	}
 	
 	private class ReceiveWorker extends SwingWorker<Void, Void>{
@@ -165,6 +166,8 @@ public class Client extends JFrame implements ActionListener{
 			Package p = null;
 			try {
 				while ((p = (Package) in.readObject()) != null) {
+					btnquit.setEnabled(false);
+					System.out.println(name + " get package: " + p.getType());
 					/*
 					 * 
 					 */
@@ -199,6 +202,7 @@ public class Client extends JFrame implements ActionListener{
 						stacks = stacks + stackChange;
 						stack.setText("Stacks: "+stacks);
 						text3.setText("Waiting for a new game...");
+						btnquit.setEnabled(true);
 					}
 					
 					/*

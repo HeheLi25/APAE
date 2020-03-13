@@ -44,6 +44,7 @@ public class Server implements Runnable, ActionListener {
 		 * @param p The package to be sent.
 		 */
 		private void send(Package p) {
+			System.out.println("Send package to "+name+": "+p.getType());
 			try {
 				out.writeObject(p);
 			} catch (IOException e) {
@@ -71,7 +72,7 @@ public class Server implements Runnable, ActionListener {
 			try {
 				// Waiting for package from the client.
 				while ((p = (Package) in.readObject()) != null) {
-					System.out.println("Package Received from:"+ name);
+					System.out.println("Get package from "+name+": "+p.getType());
 					if (p.getType().equals("QUIT")) {
 						quit();
 						break;
@@ -89,7 +90,7 @@ public class Server implements Runnable, ActionListener {
 					if (p.getType().equals("PASS")) {
 						if(dealer == this) {
 							clearingResult();
-							return;
+							continue;
 						}
 						passCounter ++;
 						view.writeLog(name + " stop drawing cards (pass).");
@@ -100,7 +101,7 @@ public class Server implements Runnable, ActionListener {
 					if (p.getType().equals("OUT")) {
 						if(dealer == this) {
 							dealerOut();
-							return;
+							continue;
 						}
 						ArrayList<ClientThread> delList = new ArrayList<ClientThread>();
 						delList.add(this);
@@ -287,11 +288,12 @@ public class Server implements Runnable, ActionListener {
 			if(player != dealer) {
 				player.send(new Package("MESSAGE","The dealer's points is over 21. You win a stack!"));
 				player.send(new Package("END",1));
-				dealerLosingStack--;
+				dealerLosingStack++;
 			}
 		}
-		dealer.send(new Package("MESSAGE","Over 21! You lose "+(-dealerLosingStack)+" stacks to winners."));	
-		dealer.send(new Package("END",dealerLosingStack));	
+		int dealerStackChange = losers - dealerLosingStack;
+		dealer.send(new Package("MESSAGE","Over 21! You lose "+dealerLosingStack+" stacks to winners and get "+losers+" from losers. "));	
+		dealer.send(new Package("END",dealerStackChange+1));	
 		endGame();
 	}
 	
