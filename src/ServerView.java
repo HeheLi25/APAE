@@ -14,7 +14,6 @@ public class ServerView extends JFrame{
 	private JLabel in;
 	private JLabel wait;
 	private Server controller;
-	private JLabel status;
 
 	public JButton getStart() {
 		return start;
@@ -45,13 +44,12 @@ public class ServerView extends JFrame{
 		setTitle("Game Server");
 		setSize(300,500);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setLocation(300,200);
 		in = new JLabel("0 player(s) in game.");
 //		in.setFont(new Font("Arial", Font.BOLD, 15));
-		in.setBounds(21, 0, 151, 29);
+		in.setBounds(21, 10, 151, 29);
 		wait = new JLabel("0 player(s) waiting.");
 //		wait.setFont(new Font("Arial", Font.BOLD, 15));
-		wait.setBounds(21, 31, 151, 29);
+		wait.setBounds(21, 49, 151, 29);
 		getContentPane().setLayout(null);
 		getContentPane().add(in);
 		getContentPane().add(wait);
@@ -70,28 +68,22 @@ public class ServerView extends JFrame{
 		start = new JButton("Start");
 		start.addActionListener(controller);
 //		start.setFont(new Font("Arial", Font.BOLD, 15));
-		start.setBounds(175, 27, 78, 29);
+		start.setBounds(175, 49, 78, 29);
 		getContentPane().add(start);
 		
 		start.setEnabled(false);
 		
-		status = new JLabel("Status: waiting for players");
-		status.setBounds(21, 61, 151, 29);
-		getContentPane().add(status);
 	}
 	public void changeStatus(String status) {
 		switch(status) {
 		case "waiting":
 			start.setEnabled(false);
-			this.status = new JLabel("Status: waiting for players");
 			break;
 		case "ready":
 			start.setEnabled(true);
-			this.status = new JLabel("Status: ready to start");
 			break;
 		case "start":
 			start.setEnabled(false);
-			this.status = new JLabel("Status: in game");
 			break;
 			
 		}

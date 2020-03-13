@@ -8,12 +8,14 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
+
 /**
  * The main class of server.
  */
-
 public class Server implements Runnable, ActionListener {
-
 	/**
 	 * The inner class ClientThread. Each time when a client connected to the server
 	 * the server will create a ClientThread object to handle the client.
@@ -24,7 +26,8 @@ public class Server implements Runnable, ActionListener {
 		private ObjectInputStream in = null;
 		private ObjectOutputStream out = null;
 		private String name;
-		private ArrayList<Card> cards = new ArrayList<Card>();
+		private ArrayList<Card> clientCards = new ArrayList<Card>();
+		private int points = 0;
 
 		public ClientThread(Socket s, Server parent) {
 			this.s = s;
@@ -36,7 +39,6 @@ public class Server implements Runnable, ActionListener {
 				e.printStackTrace();
 			}
 		}
-
 		/**
 		 * This send method takes a package object and send it to the client.
 		 * 
@@ -49,7 +51,6 @@ public class Server implements Runnable, ActionListener {
 				e.printStackTrace();
 			}
 		}
-
 		private void quit() {
 			ArrayList<ClientThread> delList = new ArrayList<ClientThread>();
 			delList.add(this);
@@ -58,13 +59,6 @@ public class Server implements Runnable, ActionListener {
 			view.changeInAndWait(players.size(),waitingPlayers.size());
 			view.writeLog("Player: " + name + " has quited.");
 			if(dealer == this) dealer = null;
-			//Print the current players on the screen.
-//			view.writeLog("------players------");
-//			view.writeLog("In-game players:");
-//			for(ClientThread p:players) {view.writeLog("-"+p.name);}
-//			view.writeLog("Waiting players:");
-//			for(ClientThread wp:waitingPlayers) {view.writeLog("-"+wp.name);}
-//			view.writeLog("----------------------");
 			statusCheck();
 		}
 
@@ -74,7 +68,6 @@ public class Server implements Runnable, ActionListener {
 			try {
 				// Waiting for package from the client.
 				while ((p = (Package) in.readObject()) != null) {
-//	        			System.out.println("Package get.");
 					if (p.getType().equals("QUIT")) {
 						quit();
 						break;
@@ -94,7 +87,6 @@ public class Server implements Runnable, ActionListener {
 			}
 		}
 	}
-	
 	private int PORT = 8765;
 	private ServerSocket server;
 	private ServerView view;
@@ -103,8 +95,7 @@ public class Server implements Runnable, ActionListener {
 	private ClientThread dealer = null;
 	private String status = "waiting";
 	private CardDeck deck = new CardDeck();
-	//Statuses: waiting/ready/start
-	
+	//Statuses: waiting/ready/start	
 	/**
 	 * This StatusCheck method check the status of the game and the number of players waiting.
 	 * Reflecting the status to the view. 
@@ -117,19 +108,7 @@ public class Server implements Runnable, ActionListener {
 		}
 		view.changeStatus(status);
 	}
-	
-	/**
-	 * The refreshDeck method refresh the card deck.
-	 * Used when a new game starts and the choosing dealer process ends.
-	 */
-	public void refreshDeck() {
-		deck = new CardDeck();
-		view.writeLog("The card deck is refreshed.");
-	}	
-
-	/**
-	 * Constructor of the Server.
-	 */
+	//Constructor
 	public Server() {
 		try {
 			view = new ServerView(this);
@@ -157,41 +136,113 @@ public class Server implements Runnable, ActionListener {
 			}
 		}
 	}
+	public void messageToAll(String s) {
+		for(ClientThread player: players) {
+			player.send(new Package("MESSAGE",s));
+		}
+	}
+	public void cleanToAll() {
+		for(ClientThread player: players) {
+			player.send(new Package("CLEAN",null));
+		}
+	}
+	public void cardToAll() {
+		for(ClientThread player: players) {
+			Card thisCard = deck.draw();
+			player.clientCards.add(thisCard);
+			player.send(new Package("CARD",thisCard));
+			view.writeLog(player.name +" draws: " + thisCard.toString());
+			try {Thread.sleep(200);}catch(Exception exc) {exc.printStackTrace();}
+		}
+	}
+	public void countAllPoints() {
+		for(ClientThread player: players) {
+			player.points = PointCounter.countPoint(player.clientCards);
+			view.writeLog(player.name+" : "+player.points);
+		}
+	}
+	/**
+	 * This checkNVU method is called when the players got their first 2 cards
+	 * to check whether there is one or more "Natural Vingt-Un".
+	 */
+	public void checkNatural21() {
+		ArrayList<ClientThread> NVU = new ArrayList<ClientThread>();
+		for(ClientThread player: players) 
+			if(player.points == 21) {
+				NVU.add(player);
+			}
+		if(NVU.size() == 1) {	//One player wins with natural vingt-un (21).
+			ClientThread winner = NVU.get(0);
+			view.writeLog("----"+winner.name + " wins with natural 21!----");
+			for(ClientThread player: players) {	//Send all losing players the message and change their stacks.  
+				player.send(new Package("MESSAGE",winner.name+" has natural 21! You lose 2 stacks."));
+				player.send(new Package("END",-2));
+				if(player == winner) {	//Send the winner the different message and change the stacks
+					winner.send(new Package("MESSAGE","YOU win with natural 21! +"+2*(players.size()-1)+"stacks"));
+					winner.send(new Package("END",2*(players.size()-1)));
+				}
+			}
+			dealer = winner; //Change the dealer to the winner
+			endGame();
+		}else if(NVU.size() > 1) {
+			view.writeLog("----More than one natural 21. No winners.----");
+			messageToAll("More than one natural 21. No winners.");
+			for(ClientThread player: players) {
+				player.send(new Package("END",0));
+			}
+			endGame();
+		}else view.writeLog("No natural 21.");	
+	}
+	
+	
+	public void endGame() {
+		
+	}
+	
+	
 
 	public void actionPerformed(ActionEvent e) {
+		/*
+		 * The server pressed start. 
+		 * Start the SwingWorker thread.
+		 */
 		if(e.getSource() == view.getStart()) { 
-			//The server pressed start. 
-			//Move all the players in waiting list to the in-game list. 
+			GameWorker gw = new GameWorker();
+			gw.execute();
+		}
+		
+	}
+	private class GameWorker extends SwingWorker<Void, Void>{
+		public Void doInBackground(){
+			//Move all clients in the waiting list to the player list.
 			players.addAll(waitingPlayers);
 			waitingPlayers.clear();
-			view.changeIn(players.size());
-			view.changeWait(waitingPlayers.size());
+			view.changeInAndWait(players.size(),waitingPlayers.size());
 			view.writeLog("Server has started the game.");
 			view.writeLog("-------------GAME START--------------");
-			//Send a START package to every client.
-			Package startPackage = new Package("MESSAGE","GAME START!");
-			for(ClientThread player: players) {player.send(startPackage);}
+			//Send a START package to every player.
+			messageToAll("GAME START!");
 			view.writeLog("The START signal is sent to all clients.");
 			status = "start";
 			statusCheck();
-			refreshDeck(); 
+			deck.init();
 			try {Thread.sleep(1000);}catch(Exception exc) {exc.printStackTrace();}
 			if(dealer == null) { 
-				//If there is no dealer, draw cards to choose one. 
-				//Send a package to signal that the choosing dealer process begins.
-				Package p = new Package("MESSAGE","Draw cards to decide the dealer!");
-				view.writeLog("No dealer. Players draw to decide who is the dealer.");
-				for(ClientThread player: players) {
-					player.send(p);  
-				}
+				/*
+				 * If there is no dealer, draw cards to choose one. 
+				 * Send a package to signal that the choosing dealer process begins.
+				 */
+				messageToAll("Drawing cards to decide the dealer.");
+				try {Thread.sleep(1000);}catch(Exception exc) {exc.printStackTrace();}
+				view.writeLog("---Decide the dealer---");
 				//Each player draws cards to choose a dealer.
 				boolean dealerChosen = false;
 				while(!dealerChosen) {
 					for(ClientThread player: players) {
 						Card thisCard = deck.draw();
-						player.send(new Package("CARD",thisCard));
+						player.send(new Package("CARD_DEALER",thisCard));
 						view.writeLog(player.name +" draws: " + thisCard.toString());
-						try {Thread.sleep(500);}catch(Exception exc) {exc.printStackTrace();}
+						try {Thread.sleep(200);}catch(Exception exc) {exc.printStackTrace();}
 						//If any one draw an "A", the process is finished.
 						if(thisCard.getNum().equals("A")) {
 							dealerChosen = true;
@@ -200,19 +251,35 @@ public class Server implements Runnable, ActionListener {
 						}
 					}
 				}
-				view.writeLog("The dealer is: "+ dealer.name);
-				for(ClientThread player: players) {
-					if(player == dealer) {
-						player.send(new Package("MESSAGE","YOU are the dealer now!"));
-					}else {
-						player.send(new Package("MESSAGE","The dealer is: "+dealer.name+". "));
-					}
-				}
-				
-				
 			}
+			view.writeLog("---The dealer is: " + dealer.name + "---");
+			for(ClientThread player: players) {
+				if(player == dealer) {
+					player.send(new Package("MESSAGE","YOU are the dealer now!"));
+				}else {
+					player.send(new Package("MESSAGE","The dealer is: "+dealer.name+". "));
+				}
+			}
+			try {Thread.sleep(2000);}catch(Exception exc) {exc.printStackTrace();}
+			/*
+			 * Now the dealer is decided, the game starts.
+			 * Send a clean signal to the clients so they can clean their card deck.
+			 * Deal 2 cards for each player.
+			 */
+			cleanToAll();
+			view.writeLog("Clients clean their decks.");
+			messageToAll("Round start. Dealing cards.");
+			try {Thread.sleep(1000);}catch(Exception exc) {exc.printStackTrace();}
+			deck.init();
+			//Two cards to each player. 
+			cardToAll();
+			cardToAll();
+			messageToAll("Cards dealed.");
+			view.writeLog("Cards dealed.");
 			
+			return null;
 		}
+
 		
 	}
 

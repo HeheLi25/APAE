@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -21,8 +22,7 @@ import javax.swing.border.LineBorder;
 import javax.swing.SwingConstants;
 
 public class Client extends JFrame implements ActionListener{
-	private JLabel text1;
-	private JLabel text2,yourCards;
+	private JLabel text1,text2,text3,stack;
 	private JButton btnquit,draw,pass;
 	public JPanel cardPanel;
 	
@@ -32,7 +32,10 @@ public class Client extends JFrame implements ActionListener{
 	private ObjectOutputStream out;
 	private ReceiveWorker receiver;
 	private boolean quit = false;
-	private String name;
+	private ArrayList<Card> cards = new ArrayList<Card>();
+	private int points;
+	private int stacks = 100;
+//	private String name;
 	
 	public void setStateToWait() {
 		text2.setText("Waiting for a new game to start...");
@@ -42,12 +45,11 @@ public class Client extends JFrame implements ActionListener{
 		pass.setEnabled(true);
 	}
 	public Client() {
+		//The GUI page design.
 		setTitle("Game Twenty-one");
 		setSize(300, 500);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setLocation(500, 300);
 		text1 = new JLabel("Username: ");
-		text1.setFont(new Font("Arial", Font.BOLD, 12));
 		text1.setBounds(21, 0, 158, 23);
 		text2 = new JLabel("Connecting to the server...");
 		text2.setHorizontalAlignment(SwingConstants.CENTER);
@@ -56,13 +58,14 @@ public class Client extends JFrame implements ActionListener{
 		getContentPane().setLayout(null);
 		getContentPane().add(text1);
 		getContentPane().add(text2);
-		
+		stack = new JLabel("Stack:"+stacks);
+		stack.setBounds(200, 0, 81, 23);
+		getContentPane().add(stack);
 		cardPanel = new JPanel();
 		cardPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
 		cardPanel.setBounds(20, 94, 242, 191);
 		getContentPane().add(cardPanel);
-		cardPanel.setLayout(new GridLayout(0,1));
-		
+		cardPanel.setLayout(new GridLayout(0,1));	
 		draw = new JButton("Draw a card");
 		draw.setBounds(80, 300, 120, 40);
 		draw.setEnabled(false);
@@ -70,18 +73,16 @@ public class Client extends JFrame implements ActionListener{
 		pass = new JButton("Pass");
 		pass.setBounds(80, 345, 120, 40);
 		pass.setEnabled(false);
-		getContentPane().add(pass);
-		
+		getContentPane().add(pass);	
 		btnquit = new JButton("Quit");
 		btnquit.setBounds(80, 390, 120, 40);
 		btnquit.addActionListener(this);
-		getContentPane().add(btnquit);
-		
-		yourCards = new JLabel("Your cards");
-		yourCards.setBounds(21, 71, 241, 23);
-		yourCards.setFont(new Font("Arial", Font.BOLD, 12));
-		getContentPane().add(yourCards);
-		
+		getContentPane().add(btnquit);	
+		text3 = new JLabel("Welcome.");
+		text3.setBounds(21, 71, 168, 23);
+		getContentPane().add(text3);
+		setVisible(true);
+		//Connect the server.
 		try {
 			server = new Socket(IP, PORT);
 			out = new ObjectOutputStream(server.getOutputStream());
@@ -92,7 +93,6 @@ public class Client extends JFrame implements ActionListener{
 			e.printStackTrace();
 			return;
 		}
-		setVisible(true);
 		/*
 		 * When the client is connected to the server, show a dialog
 		 * The user will input their name and it will be sent to the server. 
@@ -101,7 +101,6 @@ public class Client extends JFrame implements ActionListener{
 		while (s == null||s.equals(""))
 			s = JOptionPane.showInputDialog("Please input your name:");
 		send(new Package("REGISTER", s));
-		this.name = s;
 		text1.setText("Username: "+s);
 		setStateToWait();
 
@@ -144,21 +143,52 @@ public class Client extends JFrame implements ActionListener{
 			Package p = null;
 			try {
 				while ((p = (Package) in.readObject()) != null) {
-					System.out.println("Package received");
+					/*
+					 * 
+					 */
 					if (p.getType().equals("MESSAGE")) {
+						System.out.println("Message received");
 						text2.setText((String) p.getObject());
 					}
+					/*
+					 * 
+					 */
 					if (p.getType().equals("CARD")) {
 						Card thisCard = (Card) p.getObject();
-						System.out.println(thisCard.toString());
-						yourCards.setText("You drawed: "+thisCard.toString());
+						cards.add(thisCard);
 						JLabel cardLabel = new JLabel(thisCard.toString());
 						cardLabel.setHorizontalAlignment(SwingConstants.CENTER);
 						parent.cardPanel.add(cardLabel);
-						
+						points = PointCounter.countPoint(cards);
+						text3.setText("Points: "+ points);
 					}
-					if (p.getType().equals("CLEAR")) {
-						//view.getCardPanel().removeAll();
+					if (p.getType().equals("CARD_DEALER")) {
+						Card thisCard = (Card) p.getObject();
+						cards.add(thisCard);
+						System.out.println(thisCard.toString());
+						text3.setText("You drawed: "+thisCard.toString());
+					}
+					if (p.getType().equals("END")) {
+						int stackChange = (Integer) p.getObject();
+						stacks = stacks - stackChange;
+						stack.setText("Stacks: "+stacks);
+						text3.setText("Waiting for a new game...");
+					}
+					
+					/*
+					 * 
+					 */
+					if (p.getType().equals("CLEAN")) {
+						System.out.println("Clean received");
+						cardPanel.removeAll();
+						cards.clear();
+						text3.setText("Cleaning deck...");
+					}
+					/*
+					 * 
+					 */
+					if (p.getType().equals("COUNT")) {
+
 					}
 				}
 			} catch (SocketException e) {
@@ -177,5 +207,4 @@ public class Client extends JFrame implements ActionListener{
 		Client c = new Client();
 		
 	}
-
 }

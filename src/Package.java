@@ -6,7 +6,9 @@ public class Package implements Serializable{
 	/* MESSAGE
 	 * START
 	 * CARD
-	 * CHOOSE
+	 * COUNT
+	 * END
+	 * 
 	 * REGISTER
 	 * DRAW
 	 */
