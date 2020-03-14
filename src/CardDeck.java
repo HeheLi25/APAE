@@ -6,15 +6,16 @@ import java.util.Collections;
  * This is the class of a deck of cards.
  * It has an arrayList that contains 52 Card objects initially. 
  * It is able to shuffle, initialize and draw cards. 
- * @author Yirong Li
- *
  */
 public class CardDeck {
 	private ArrayList<Card> deck = new ArrayList<Card>();
-	
+	//Constructor
 	public CardDeck(){
 		init();
 	}
+	/**
+	 * The init method initialize the whole deck.
+	 */
 	public void init() {
 		deck.clear();
 		for(int i = 2; i<=10; i++) {
@@ -45,22 +46,24 @@ public class CardDeck {
 		
 		shuffle();
 	}
+	//getter
 	public ArrayList<Card> getDeck(){
 		return deck;
 	}
+	/**
+	 * The shuffle method shuffles the cards.
+	 */
 	public void shuffle() {
 		Collections.shuffle(deck);
 	}
+	/**
+	 * The draw method remove and return the first card at the top of the deck.
+	 * The method is synchronized.
+	 * @return A card.
+	 */
 	public Card draw() {
 		synchronized(this) {
 			return deck.remove(0);
 		}
 	}
-	public static void main(String[] args) {
-		CardDeck cd = new CardDeck();
-		for(Card c: cd.getDeck()) {
-			System.out.println(c.toString());
-		}
-	}
-
 }

@@ -7,18 +7,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
-
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
-
 /**
  * The main class of server.
  */
 public class Server implements Runnable, ActionListener {
 	/**
-	 * The inner class ClientThread. Each time when a client connected to the server
+	 * The inner class ClientThread.
+	 * Each time when a client connected to the server,
 	 * the server will create a ClientThread object to handle the client.
+	 * So each ClientThread represents a client.
 	 */
 	private class ClientThread implements Runnable {
 		private Socket s = null;
@@ -28,44 +28,50 @@ public class Server implements Runnable, ActionListener {
 		private String name;
 		private ArrayList<Card> clientCards = new ArrayList<Card>();
 		private int points = 0;
-
+		/**
+		 * Constructor of the ClientThread.
+		 * @param s : The socket of this client. 
+		 * @param parent : The parent server object.
+		 */
 		public ClientThread(Socket s, Server parent) {
 			this.s = s;
 			this.parent = parent;
 			try {
 				out = new ObjectOutputStream(this.s.getOutputStream());
 				in = new ObjectInputStream(this.s.getInputStream());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			} catch (IOException e) {e.printStackTrace();}
 		}
 		/**
-		 * This send method takes a package object and send it to the client.
+		 * This send method takes a package object and send it to this client.
 		 * @param p The package to be sent.
 		 */
 		private void send(Package p) {
 			System.out.println("Send package to "+name+": "+p.getType());
 			try {
 				out.writeObject(p);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			} catch (IOException e) {e.printStackTrace();}
 		}
+		/**
+		 * This quit method delete the player from the waiting list or the player list,
+		 * then update the displayed number of players.
+		 * It is called when a client sent a QUIT package or disconnected.
+		 */
 		private void quit() {
 			ArrayList<ClientThread> delList = new ArrayList<ClientThread>();
 			delList.add(this);
 			players.removeAll(delList);
 			waitingPlayers.removeAll(delList);
-			view.changeInAndWait(players.size(),waitingPlayers.size());
-			
+			view.changeInAndWait(players.size(),waitingPlayers.size());		
 			if(dealer == this) {
 				dealer = null;
 				view.writeLog("Dealer: " + name + " has quited. NO DEALER NOW.");
-			}else 
-				view.writeLog("Player: " + name + " has quited.");
+			}else view.writeLog("Player: " + name + " has quited.");
 			statusCheck();
 		}
-
+		/**
+		 * The run method of the ClientThread.
+		 * When it start to run it keep on waiting for packages and deal with them.
+		 */
 		public void run() {
 			System.out.println("Thread running");
 			Package p;
@@ -73,10 +79,18 @@ public class Server implements Runnable, ActionListener {
 				// Waiting for package from the client.
 				while ((p = (Package) in.readObject()) != null) {
 					System.out.println("Get package from "+name+": "+p.getType());
+					/*	
+					 * Handling QUIT package: 
+					 *  call quit() for the player, then break the loop then the run() will end.
+					 */
 					if (p.getType().equals("QUIT")) {
 						quit();
 						break;
 					}
+					/*
+					 * Handling REGISTER package:
+					 * Record the client's name and add it the waiting list.
+					 */
 					if (p.getType().equals("REGISTER")) {
 						name = (String) p.getObject();
 						waitingPlayers.add(this);
@@ -84,9 +98,17 @@ public class Server implements Runnable, ActionListener {
 						view.changeWait(waitingPlayers.size());						
 						statusCheck();
 					}
+					/*
+					 * Handling DRAW package:
+					 * Call the cardToOne method to draw and send a card to this player.
+					 */
 					if (p.getType().equals("DRAW")) {
 						cardToOne(this);
 					}
+					/*
+					 * Handling PASS package:
+					 * Update the passCounter variable and check whether all clients have chosen to pass.
+					 */
 					if (p.getType().equals("PASS")) {
 						if(dealer == this) {
 							clearingResult();
@@ -95,9 +117,13 @@ public class Server implements Runnable, ActionListener {
 						passCounter ++;
 						view.writeLog(name + " stop drawing cards (pass).");
 						if(passCounter >= players.size()-1) {
-							dealerTurn();
+							dealerTurn();	//If all remaining clients choose to pass, start the dealer's turn.
 						}
 					}
+					/*
+					 * Handling OUT package:
+					 * A client sends OUT means he got more than 21 points. Move him from player list to waiting list.
+					 */
 					if (p.getType().equals("OUT")) {
 						if(dealer == this) {
 							dealerOut();
@@ -110,12 +136,11 @@ public class Server implements Runnable, ActionListener {
 						view.writeLog(name + " is OUT of the game.");
 						view.changeInAndWait(players.size(), waitingPlayers.size());
 						losers ++;
-						if(passCounter >= players.size()-1) {
+						// Since the size of player list changed, check again whether all remain players have chosen to pass. 
+						if(passCounter >= players.size()-1) {	
 							dealerTurn();
 						}
-					}
-					
-					
+					}	
 				}
 			} catch (SocketException e) {
 				quit();
@@ -123,14 +148,16 @@ public class Server implements Runnable, ActionListener {
 				e.printStackTrace();
 			}
 		}
-	}
+	}// The end of the inner class ClientThread.
+	
+	// Attributes of the Server itself.
 	private int PORT = 8765;
 	private ServerSocket server;
 	private ServerView view;
 	private ArrayList<ClientThread> players = new ArrayList<ClientThread>();
 	private ArrayList<ClientThread> waitingPlayers = new ArrayList<ClientThread>();
-	private int passCounter = 0; //This counter is to monitor whether all the players have chosen "pass" and the game shall end. 
-	private String status = "waiting"; //The server has statuses: waiting/ready/start to control the availability of "start" button. 
+	private int passCounter = 0; // This counter is to monitor whether all the players have chosen "pass" and the game shall end. 
+	private String status = "waiting"; // The server has statuses: waiting/ready/start to control the availability of "start" button. 
 	private ClientThread dealer = null;
 	private int winners = 0;
 	private int losers = 0;
@@ -158,9 +185,8 @@ public class Server implements Runnable, ActionListener {
 		view = new ServerView(this);
 		view.setVisible(true);
 	}
-
 	/**
-	 * The run method of the server always waiting for a new client connection
+	 * The run method of the server is always waiting for a new client connection.
 	 */
 	public void run() {
 		while (true) {
@@ -170,34 +196,53 @@ public class Server implements Runnable, ActionListener {
 				view.writeLog("New client connected");
 				ClientThread client = new ClientThread(clientSocket, this);
 				(new Thread(client)).start();
-
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			} catch (IOException e) {e.printStackTrace();}
 		}
 	}
+	/**
+	 * This messageToAll method send a MESSAGE package to all the players in the player list.
+	 * It is called when a message should be send to everyone.
+	 * @param s : The String message that shall be sent to all players. 
+	 */
 	public void messageToAll(String s) {
 		for(ClientThread player: players) {
 			player.send(new Package("MESSAGE",s));
 		}
+		
 	}
+	/**
+	 * The cleanToAll method send a CLEAN package to all players in the player list.
+	 * To inform them that a new round started and their card deck should be clean.
+	 */
 	public void cleanToAll() {
 		for(ClientThread player: players) {
 			player.send(new Package("CLEAN",null));
 		}
 	}
+	/**
+	 * The cardToOne method draws a card and sends it to a player.
+	 * @param player : The destination player of sending the card.
+	 */
 	public void cardToOne(ClientThread player) {
 		Card thisCard = deck.draw();
 		player.clientCards.add(thisCard);
 		player.send(new Package("CARD",thisCard));
 		view.writeLog(player.name +" draws: " + thisCard.toString());
 	}
+	/**
+	 * The cardToAll method calls the cardToOne method several times to send a card to every player.
+	 * The card drawing method is synchronized. The sleeping is only used to make it seems more real.
+	 */
 	public void cardToAll() {
 		for(ClientThread player: players) {
 			cardToOne(player);
 			try {Thread.sleep(200);}catch(Exception exc) {exc.printStackTrace();}
 		}
 	}
+	/**
+	 * The askToAll method send a ASK package to all the players except the dealer.
+	 * Instead it send the dealer a message to inform him to wait for other players.
+	 */
 	public void askToAll() {
 		for(ClientThread player: players) {
 			if(player != dealer)
@@ -207,6 +252,10 @@ public class Server implements Runnable, ActionListener {
 			}
 		}
 	}
+	/**
+	 * This countAllPoints method counts the points of each players using their cards and stores them.
+	 * It calls PointCounter.countPoint().
+	 */
 	public void countAllPoints() {
 		for(ClientThread player: players) {
 			player.points = PointCounter.countPoint(player.clientCards);
@@ -220,11 +269,11 @@ public class Server implements Runnable, ActionListener {
 	public boolean checkNatural21() {
 		ArrayList<ClientThread> NVU = new ArrayList<ClientThread>();
 		for(ClientThread player: players) 
-			if(player.points == 21) {
+			if(player.points == 21) 
 				NVU.add(player);
-			}
 		if(NVU.size() == 1) {	//One player wins with natural vingt-un (21).
 			ClientThread winner = NVU.get(0);
+			//Change the dealer to the winner
 			view.writeLog("Dealer changed from " + dealer.name + " to " + winner.name);
 			dealer.send(new Package("DEALER",false)); 
 			dealer = winner; 
@@ -239,54 +288,31 @@ public class Server implements Runnable, ActionListener {
 					winner.send(new Package("END",winStacks));
 				}
 			}
-			//Change the dealer to the winner
-
-			
 			return true;
 		}else if(NVU.size() > 1) {
 			view.writeLog("----More than one natural 21. No winners.----");
 			messageToAll("More than one natural 21. No winners.");
-			for(ClientThread player: players) {
+			for(ClientThread player: players) 
 				player.send(new Package("END",0));
-			}
 			return true;
 		}else{
 			view.writeLog("No natural 21.");	
 			return false;
 		}
 	}
-	
-	public void clearingResult() {
-		view.writeLog("----All players have stopped drawing cards.----");
-		countAllPoints();
-		int dealerPoints = dealer.points;
-		view.writeLog("The dealer (" + dealer.name +") got "+ dealerPoints+" points.");
-		for(ClientThread player: players) {
-			if(player != dealer) {
-				if(dealerPoints > player.points) {
-					player.send(new Package("MESSAGE","Dealer's point: "+dealerPoints +", your points: "+player.points+". You lose a stack."));
-					player.send(new Package("END",-1));
-					view.writeLog("C" + dealer.name +" got "+ dealerPoints+" points.");
-					losers ++;
-				}else if(dealerPoints < player.points){
-					player.send(new Package("MESSAGE","Dealer's point: "+dealerPoints +", your points: "+player.points+". You win a stack."));
-					player.send(new Package("END",1));
-					view.writeLog("[WINNER] " + dealer.name +" got "+ dealerPoints+" points.");
-					winners ++;
-				}else {
-					player.send(new Package("MESSAGE","Dealer's point: "+dealerPoints +", your points: "+player.points+". Your stacks remains."));
-					player.send(new Package("END",0));
-					view.writeLog("[OTHER] "+ dealer.name +" got "+ dealerPoints+" points.");
-				}
-			}
-		}
-		//Deal with the dealer.
-		int dealerStackChange = losers - winners;
-		view.writeLog("The dealer wins "+ dealerStackChange +"stack(s).");
-		dealer.send(new Package("MESSAGE",winners +" player(s) defeat you, "+losers+" lose(s). Stack change: "+dealerStackChange));
-		dealer.send(new Package("END", dealerStackChange));
-		endGame();
+	/**
+	 * The dealerTurn method is called when other players are all pass or out and it comes to the dealer's turn.
+	 * It send an ASK package to the dealer.
+	 */
+	public void dealerTurn() {
+		view.writeLog("All players pass, dealer's turn.");
+		dealer.send(new Package("MESSAGE","Now is your turn."));
+		dealer.send(new Package("ASK",null));
 	}
+	/**
+	 * The dealerOut method handles the situation 
+	 * that the dealer is out because of points over 21.
+	 */
 	public void dealerOut() {
 		view.writeLog("Dealer: "+PointCounter.countPoint(dealer.clientCards)+", DEALER OUT!");
 		int dealerLosingStack = 0;
@@ -298,18 +324,47 @@ public class Server implements Runnable, ActionListener {
 			}
 		}
 		int dealerStackChange = losers - dealerLosingStack;
-		dealer.send(new Package("MESSAGE","Over 21! You lose "+dealerLosingStack+" stacks to winners and get "+losers+" from losers. "));	
+		dealer.send(new Package("MESSAGE","Over 21! You lose "+dealerLosingStack+" stacks and get "+losers+" from losers. "));	
 		dealer.send(new Package("END",dealerStackChange+1));	
 		endGame();
 	}
-	
-	public void dealerTurn() {
-		view.writeLog("All players pass, dealer's turn.");
-		dealer.send(new Package("MESSAGE","Now is your turn."));
-		dealer.send(new Package("ASK",null));
+	/**
+	 * This clearingResult is used to deal the final result of a round of the game.
+	 * It is called when the round naturally ends.
+	 * It generate and send the result to all players.
+	 */
+	public void clearingResult() {
+		view.writeLog("----All players have stopped drawing cards.----");
+		countAllPoints();
+		int dealerPoints = dealer.points;
+		view.writeLog("The dealer (" + dealer.name +") got "+ dealerPoints+" points.");
+		for(ClientThread player: players) {
+			if(player != dealer) {
+				if(dealerPoints > player.points) {	//Losers.
+					player.send(new Package("MESSAGE","Dealer: "+dealerPoints +", you: "+player.points+". You lose a stack."));
+					player.send(new Package("END",-1));
+					losers ++;
+				}else if(dealerPoints < player.points){	//Winners.
+					player.send(new Package("MESSAGE","Dealer: "+dealerPoints +", you: "+player.points+". You win a stack."));
+					player.send(new Package("END",1));
+					winners ++;
+				}else {	//Those who have same points with dealer.
+					player.send(new Package("MESSAGE","Dealer: "+dealerPoints +", you: "+player.points+". Your stacks remains."));
+					player.send(new Package("END",0));
+				}
+			}
+		}
+		//Deal with the dealer.
+		int dealerStackChange = losers - winners;
+		view.writeLog("The dealer wins "+ dealerStackChange +"stack(s).");
+		dealer.send(new Package("MESSAGE",winners +" player defeat you, "+losers+" lose. Stack change: "+dealerStackChange));
+		dealer.send(new Package("END", dealerStackChange));
+		endGame();
 	}
-	
-	
+	/**
+	 * The endGame method ends the game and initialize the ClientThreads and the server.
+	 * It is called by other methods after they deal with each kind of results of a round.
+	 */
 	public void endGame() {
 		waitingPlayers.addAll(players);
 		players.clear();
@@ -326,21 +381,25 @@ public class Server implements Runnable, ActionListener {
 		status = "waiting";
 		statusCheck();
 	}
-	
-	
-
+	/**
+	 * The actionPerformed method reacts to the start button and start a game.
+	 * It creates and execute the GameWorker (SwingWorker) that proceed a round of the game.
+	 */
 	public void actionPerformed(ActionEvent e) {
-		/*
-		 * The server pressed start. 
-		 * Start the SwingWorker thread.
-		 */
 		if(e.getSource() == view.getStart()) { 
 			GameWorker gw = new GameWorker();
 			gw.execute();
 		}
-		
 	}
+	/**
+	 * Inner class GameWorker which is a swingWorker.
+	 */
 	private class GameWorker extends SwingWorker<Void, Void>{
+		/**
+		 * The doInBackground method proceed a whole round of the game.
+		 * It calls the methods defined above.
+		 * It is triggered by the actionPerformed method of Server.
+		 */
 		public Void doInBackground(){
 			//Move all clients in the waiting list to the player list.
 			players.addAll(waitingPlayers);
@@ -416,6 +475,10 @@ public class Server implements Runnable, ActionListener {
 			return null;
 		}		
 	}
+	/**
+	 * Main method to start the server. 
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		Thread t = new Thread(new Server());
 		t.start();
