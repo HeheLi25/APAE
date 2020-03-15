@@ -33,7 +33,7 @@ public class Client extends JFrame implements ActionListener{
 	private boolean quit = false;
 	private ArrayList<Card> cards = new ArrayList<Card>();
 	private int points;
-	private int stacks = 100;
+	private int stacks = 10;
 	private String name;
 	
 	public void setStateToWait() {
@@ -137,6 +137,13 @@ public class Client extends JFrame implements ActionListener{
 		send(new Package("OUT", points));
 		passYourTurn();
 		btnquit.setEnabled(true);
+		if(stacks <= 0) {
+			text3.setText("You have been disconnected.");
+			text2.setText("You don't have enough stack to start a game. ");
+			send(new Package("QUIT",null));
+			dealer.setVisible(false);
+			cardPanel.setVisible(false);
+		}
 	}
 	/**
 	 * The actionPerformed method handles the clicks of the buttons.
@@ -258,7 +265,14 @@ public class Client extends JFrame implements ActionListener{
 						int stackChange = (int) p.getObject();
 						stacks = stacks + stackChange;
 						stack.setText("Stacks: "+stacks);
-						text3.setText("Waiting for a new game...");
+						text3.setText("Game ends. Waiting for a new game...");
+						if(stacks <= 0) {
+							text3.setText("You have been disconnected.");
+							text2.setText("You don't have enough stack to start a game. ");
+							send(new Package("QUIT",null));
+							dealer.setVisible(false);
+							cardPanel.setVisible(false);
+						}
 						btnquit.setEnabled(true);
 					}
 					/*
@@ -268,7 +282,10 @@ public class Client extends JFrame implements ActionListener{
 					if (p.getType().equals("CLEAN")) {
 						cardPanel.removeAll();
 						cards.clear();
+						cardPanel.setVisible(false);
 						text3.setText("Cleaning deck...");
+						cardPanel.setVisible(true);
+						
 					}
 				}
 			} catch (SocketException e) {
