@@ -14,6 +14,7 @@ public class Package implements Serializable{
 	 * ASK: Inform the clients to choose whether to pass or draw card. Contains no object.
 	 * CLEAN: Inform the clients to delete all the cards they have received. 
 	 * END: Inform the clients that the round is end. Contains the number of stack change (Integer).
+	 * EXPLODE: Inform the dealer when a player is out of the game. Contains the player's name.  
 	 * ---From Clients to the Server---
 	 * REGISTER: The package contains a String which is the name of the player.
 	 * DRAW: After received ASK, the client choose to draw a new card. Server should send a CARD to the client.

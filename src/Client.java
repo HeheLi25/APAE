@@ -80,19 +80,19 @@ public class Client extends JFrame implements ActionListener{
 		getContentPane().add(cardPanel);
 		cardPanel.setLayout(new GridLayout(0,1));	
 		draw = new JButton("Draw a card");
-		draw.setFont(new Font("Candara", Font.PLAIN, 15));
+		draw.setFont(new Font("Impact", Font.PLAIN, 15));
 		draw.setBounds(257, 111, 120, 40);
 		draw.addActionListener(this);
 		draw.setEnabled(false);
 		getContentPane().add(draw);
 		pass = new JButton("Pass");
-		pass.setFont(new Font("Candara", Font.PLAIN, 15));
+		pass.setFont(new Font("Impact", Font.PLAIN, 15));
 		pass.setBounds(257, 161, 120, 40);
 		pass.setEnabled(false);
 		pass.addActionListener(this);
 		getContentPane().add(pass);	
 		btnquit = new JButton("Quit");
-		btnquit.setFont(new Font("Candara", Font.PLAIN, 15));
+		btnquit.setFont(new Font("Impact", Font.PLAIN, 15));
 		btnquit.setBounds(257, 211, 120, 40);
 		btnquit.addActionListener(this);
 		getContentPane().add(btnquit);	
@@ -286,6 +286,17 @@ public class Client extends JFrame implements ActionListener{
 						text3.setText("Cleaning deck...");
 						cardPanel.setVisible(true);
 						
+					}
+					/*
+					 * Received a EXPLODE package:
+					 * This will only be received by dealer.
+					 * Add one stack and show the name of the exploded player.
+					 */
+					if(p.getType().equals("EXPLODE")) {
+						String explodePlayer = (String)p.getObject();
+						text2.setText("Player "+ explodePlayer + " is out, your stack +1. ");
+						stacks ++;
+						stack.setText("Stacks: "+stacks);
 					}
 				}
 			} catch (SocketException e) {

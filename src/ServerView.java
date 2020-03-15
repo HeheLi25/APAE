@@ -77,17 +77,17 @@ public class ServerView extends JFrame{
 		in.setFont(new Font("Candara", Font.BOLD, 16));
 		in.setBounds(21, 10, 151, 29);
 		wait = new JLabel("0 player(s) waiting.");
-		wait.setFont(new Font("Candara", Font.BOLD, 15));
+		wait.setFont(new Font("Candara", Font.BOLD, 16));
 		wait.setBounds(21, 49, 151, 29);
 		getContentPane().setLayout(null);
 		getContentPane().add(in);
 		getContentPane().add(wait);
 		JLabel logTitle = new JLabel("Running log:");
-		logTitle.setFont(new Font("Consolas", Font.PLAIN, 14));
+		logTitle.setFont(new Font("Consolas", Font.PLAIN, 15));
 		logTitle.setBounds(21, 89, 151, 29);
 		getContentPane().add(logTitle);
 		logField = new JTextArea();
-		logField.setFont(new Font("Candara", Font.PLAIN, 13));
+		logField.setFont(new Font("Candara", Font.PLAIN, 14));
 		JScrollPane log = new JScrollPane();
 		log.setBounds(10, 119, 265, 331);
 		log.setViewportView(logField);
@@ -97,7 +97,7 @@ public class ServerView extends JFrame{
 		
 		start = new JButton("Start");
 		start.addActionListener(controller);
-		start.setFont(new Font("Impact", Font.BOLD, 15));
+		start.setFont(new Font("Impact", Font.BOLD, 16));
 		start.setBounds(185, 49, 78, 29);
 		getContentPane().add(start);
 		

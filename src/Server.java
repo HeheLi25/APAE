@@ -135,7 +135,14 @@ public class Server implements Runnable, ActionListener {
 						waitingPlayers.add(this);
 						view.writeLog(name + " is OUT of the game.");
 						view.changeInAndWait(players.size(), waitingPlayers.size());
-						losers ++;
+						//Inform the dealer that this player explodes. 
+						dealer.send(new Package("EXPLODE",name));
+						if(players.size() == 1) {
+							dealer.send(new Package("MESSAGE","All other players are out of game. Congrates!"));
+							dealer.send(new Package("END",0));
+							endGame();
+							continue;
+						}
 						// Since the size of player list changed, check again whether all remain players have chosen to pass. 
 						if(passCounter >= players.size()-1) {	
 							dealerTurn();
@@ -324,7 +331,7 @@ public class Server implements Runnable, ActionListener {
 			}
 		}
 		int dealerStackChange = losers - dealerLosingStack;
-		dealer.send(new Package("MESSAGE","Over 21! You lose "+dealerLosingStack+" stacks and get "+losers+" from losers. "));	
+		dealer.send(new Package("MESSAGE","Over 21! You lose "+dealerLosingStack+" stacks. "));	
 		dealer.send(new Package("END",dealerStackChange+1));	
 		endGame();
 	}
