@@ -147,11 +147,12 @@ public class Server implements Runnable, ActionListener {
 						if(passCounter >= players.size()-1) {	
 							dealerTurn();
 						}
-					}	
+					}
 				}
 			} catch (SocketException e) {
 				quit();
 			} catch (Exception e) {
+				System.out.println("Unrecognized package received.");
 				e.printStackTrace();
 			}
 		}

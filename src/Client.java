@@ -303,6 +303,7 @@ public class Client extends JFrame implements ActionListener{
 				e.printStackTrace();
 				System.exit(0);
 			} catch (Exception e) {
+				System.out.println("Unrecognized package received.");
 				e.printStackTrace();
 			}
 			return null;
